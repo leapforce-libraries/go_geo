@@ -25,8 +25,12 @@ github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200126212450-bf0517ef10a4 h1:V
 github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200126212450-bf0517ef10a4/go.mod h1:G7nZLO5B2mjemYtZXIdoxda9KIBYlLYhq1pjL9uMdIE=
 github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200126213011-dfbb71e46bfa h1:1rsgnRp6g1k0+mfjZ5TeCeO3Q1IAly5K5mitnMf9/WU=
 github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200126213011-dfbb71e46bfa/go.mod h1:v/iVDNyW473BU+cN8m3APGS1t0lrXVVH+o0NgQvf8w8=
+github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200126220557-9ac05f91ed5f h1:Rzl1sx0+nK2f/OhoSTz+2ENqUbwS//fes2MeSucn4/U=
+github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200126220557-9ac05f91ed5f/go.mod h1:rYy5jjJLl8UjQN6QbOwgxwA/6RxsiPOLEtPU03QLlF0=
 github.com/Leapforce-nl/go_types v0.0.0-20200122233829-e541676b96f4 h1:ezhhjaYq7j35phFUDp59F/Y1DItvFWgJqOilQ6+Nqb0=
 github.com/Leapforce-nl/go_types v0.0.0-20200122233829-e541676b96f4/go.mod h1:ysihm2IbP8GMlJqPA47B5CT59bXb+7QzmMJSGCSKTR0=
+github.com/Leapforce-nl/go_types v0.0.0-20200126202922-ba4900de15b8 h1:q0/mdn+TnZqBB439lOeuLPHPnQaVYCQL2B4BRLbCbuQ=
+github.com/Leapforce-nl/go_types v0.0.0-20200126202922-ba4900de15b8/go.mod h1:AuUJ0pyk3Xc6IgEuzCr5NvEl277YQwiIgJ12/SfmByI=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
