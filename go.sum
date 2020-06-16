@@ -43,6 +43,8 @@ github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200127200402-570ef581c704 h1:R
 github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200127200402-570ef581c704/go.mod h1:rYy5jjJLl8UjQN6QbOwgxwA/6RxsiPOLEtPU03QLlF0=
 github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200428115604-bc89501e4c1e h1:iam9XFB++bBwUEdsbBoxyaDXl5LKI19cZSmsNm9AWVs=
 github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200428115604-bc89501e4c1e/go.mod h1:sz9uPRM+A0rwODTo6Ign/li8js8bPcf+6U4AI79/l6A=
+github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200608110330-087805606959 h1:8h2a3YEPyZxfPjOgijthpQ2+oigmRG42+6VMkIrRUsU=
+github.com/Leapforce-nl/go_bigquerytools v0.0.0-20200608110330-087805606959/go.mod h1:sz9uPRM+A0rwODTo6Ign/li8js8bPcf+6U4AI79/l6A=
 github.com/Leapforce-nl/go_errortools v0.0.0-20200218173102-e74ff3d10089/go.mod h1:goG+xW3RRxvv/HpoxmaTFMdH+a/YeiZseoGzL9RwBAE=
 github.com/Leapforce-nl/go_types v0.0.0-20200122233829-e541676b96f4 h1:ezhhjaYq7j35phFUDp59F/Y1DItvFWgJqOilQ6+Nqb0=
 github.com/Leapforce-nl/go_types v0.0.0-20200122233829-e541676b96f4/go.mod h1:ysihm2IbP8GMlJqPA47B5CT59bXb+7QzmMJSGCSKTR0=
@@ -393,6 +395,8 @@ google.golang.org/api v0.18.0/go.mod h1:BwFmGc8tA3vsd7r/7kR8DY7iEEGSU04BFxCo5jP/
 google.golang.org/api v0.20.0/go.mod h1:BwFmGc8tA3vsd7r/7kR8DY7iEEGSU04BFxCo5jP/sfE=
 google.golang.org/api v0.23.0 h1:YlvGEOq2NA2my8cZ/9V8BcEO9okD48FlJcdqN0xJL3s=
 google.golang.org/api v0.23.0/go.mod h1:lIXQywCXRcnZPGlsd8NbLnOjtAoL6em04bJ9+z0MncE=
+google.golang.org/api v0.26.0 h1:VJZ8h6E8ip82FRpQl848c5vAadxlTXrUh8RzQzSRm08=
+google.golang.org/api v0.26.0/go.mod h1:lIXQywCXRcnZPGlsd8NbLnOjtAoL6em04bJ9+z0MncE=
 google.golang.org/appengine v1.1.0/go.mod h1:EbEs0AVv82hx2wNQdGPgUI5lhzA/G0D9YwlJXL52JkM=
 google.golang.org/appengine v1.4.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7/EB5XEv4=
 google.golang.org/appengine v1.5.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7/EB5XEv4=

@@ -28,7 +28,7 @@ func (g *Geo) GetCountryAliases() error {
 	sqlSelect := "CountryId, Alias, AliasType, IFNULL(Source,'') AS Source, Language"
 	sqlWhere := "CountryId IS NOT NULL AND Alias IS NOT NULL AND AliasType IS NOT NULL AND Language IS NOT NULL"
 
-	it, err := g.BigQuery.Get(g.BigQueryDataset, g.BigQueryTablenameCountries, sqlSelect, sqlWhere, "")
+	it, err := g.BigQuery.Select(g.BigQueryDataset, g.BigQueryTablenameCountries, sqlSelect, sqlWhere, "")
 	if err != nil {
 		return err
 	}
