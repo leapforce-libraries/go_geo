@@ -1,4 +1,4 @@
-module github.com/Leapforce-nl/go_geo
+module github.com/leapforce-libraries/go_geo
 
 go 1.13
 
