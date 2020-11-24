@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	bigquerytools "github.com/leapforce-libraries/go_bigquerytools"
+	errortools "github.com/leapforce-libraries/go_errortools"
 
 	"google.golang.org/api/iterator"
 )
@@ -28,13 +29,13 @@ type CountryAlias struct {
 	Language  string
 }
 
-func (g *Geo) GetCountryAliases() error {
+func (g *Geo) GetCountryAliases() *errortools.Error {
 	sqlSelect := "CountryId, Alias, AliasType, IFNULL(Source,'') AS Source, IFNULL(Language,'') AS Language"
 	sqlWhere := "CountryId IS NOT NULL AND Alias IS NOT NULL AND AliasType IS NOT NULL"
 
-	it, err := g.BigQuery.Select(bigqueryDataSetGeo, bigqueryTablenameCountries, sqlSelect, sqlWhere, "")
-	if err != nil {
-		return err
+	it, e := g.BigQuery.Select(bigqueryDataSetGeo, bigqueryTablenameCountries, sqlSelect, sqlWhere, "")
+	if e != nil {
+		return e
 	}
 
 	for {
@@ -44,7 +45,7 @@ func (g *Geo) GetCountryAliases() error {
 			break
 		}
 		if err != nil {
-			return err
+			return errortools.ErrorMessage(e)
 		}
 
 		g.CountryAliases = append(g.CountryAliases, ca)
@@ -55,16 +56,16 @@ func (g *Geo) GetCountryAliases() error {
 
 // FindCountryAlias searches for CountryAlias matching the criteria
 //
-func (g *Geo) FindCountryAlias(countryId string, aliasType string, source string, language string) (string, error) {
+func (g *Geo) FindCountryAlias(countryId string, aliasType string, source string, language string) (string, *errortools.Error) {
 	if countryId == "" {
 		return "", nil
 	}
 
 	// get aliases if needed
 	if len(g.CountryAliases) == 0 {
-		err := g.GetCountryAliases()
-		if err != nil {
-			return "", err
+		e := g.GetCountryAliases()
+		if e != nil {
+			return "", e
 		}
 	}
 
@@ -119,16 +120,16 @@ func (g *Geo) FindCountryAlias(countryId string, aliasType string, source string
 // FindCountryId searches for CountryAlias matching the comma-separated aliastypes, sources and languages
 // and returns the CountryId
 //
-func (g *Geo) FindCountryId(input string, aliasTypes string, sources string, languages string) (string, error) {
+func (g *Geo) FindCountryId(input string, aliasTypes string, sources string, languages string) (string, *errortools.Error) {
 	if input == "" {
 		return "", nil
 	}
 
 	// get aliases if needed
 	if len(g.CountryAliases) == 0 {
-		err := g.GetCountryAliases()
-		if err != nil {
-			return "", err
+		e := g.GetCountryAliases()
+		if e != nil {
+			return "", e
 		}
 	}
 
