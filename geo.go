@@ -15,10 +15,10 @@ const (
 )
 
 type Geo struct {
-	BigQuery             *bigquerytools.BigQuery
-	CountryAliases       []CountryAlias
-	CountryCacheForID    map[string]string
-	CountryCacheForAlias map[string]string
+	bigQuery             *bigquerytools.BigQuery
+	countryAliases       []CountryAlias
+	countryCacheForID    map[string]string
+	countryCacheForAlias map[string]string
 }
 
 type CountryAlias struct {
@@ -29,11 +29,21 @@ type CountryAlias struct {
 	Language  string
 }
 
-func (g *Geo) GetCountryAliases() *errortools.Error {
+func NewGeo(bq *bigquerytools.BigQuery) (*Geo, *errortools.Error) {
+	if bq == nil {
+		return nil, errortools.ErrorMessage("BigQuery object passed to NewGeo may not be a nil pointer.")
+	}
+
+	return &Geo{
+		bigQuery: bq,
+	}, nil
+}
+
+func (g *Geo) getCountryAliases() *errortools.Error {
 	sqlSelect := "CountryId, Alias, AliasType, IFNULL(Source,'') AS Source, IFNULL(Language,'') AS Language"
 	sqlWhere := "CountryId IS NOT NULL AND Alias IS NOT NULL AND AliasType IS NOT NULL"
 
-	it, e := g.BigQuery.Select(bigqueryDataSetGeo, bigqueryTablenameCountries, sqlSelect, sqlWhere, "")
+	it, e := g.bigQuery.Select(bigqueryDataSetGeo, bigqueryTablenameCountries, sqlSelect, sqlWhere, "")
 	if e != nil {
 		return e
 	}
@@ -48,38 +58,58 @@ func (g *Geo) GetCountryAliases() *errortools.Error {
 			return errortools.ErrorMessage(e)
 		}
 
-		g.CountryAliases = append(g.CountryAliases, ca)
+		g.countryAliases = append(g.countryAliases, ca)
 	}
 
 	return nil
 }
 
+type CountryAliasFilter struct {
+	AliasType *string
+	Source    *string
+	Language  *string
+}
+
 // FindCountryAlias searches for CountryAlias matching the criteria
 //
-func (g *Geo) FindCountryAlias(countryId string, aliasType string, source string, language string) (string, *errortools.Error) {
+func (g *Geo) CountryID2CountryAlias(countryId string, filter *CountryAliasFilter) (string, *errortools.Error) {
 	if countryId == "" {
 		return "", nil
 	}
 
 	// get aliases if needed
-	if len(g.CountryAliases) == 0 {
-		e := g.GetCountryAliases()
+	if len(g.countryAliases) == 0 {
+		e := g.getCountryAliases()
 		if e != nil {
 			return "", e
 		}
 	}
 
 	// init cache if needed
-	if g.CountryCacheForAlias == nil {
-		g.CountryCacheForAlias = make(map[string]string)
+	if g.countryCacheForAlias == nil {
+		g.countryCacheForAlias = make(map[string]string)
 	}
 
-	aliasType = strings.ToLower(aliasType)
-	source = strings.ToLower(source)
-	language = strings.ToLower(language)
+	aliasType := ""
+	source := ""
+	language := ""
+
+	if filter != nil {
+		if filter.AliasType != nil {
+			aliasType = strings.ToLower(*filter.AliasType)
+		}
+
+		if filter.Source != nil {
+			source = strings.ToLower(*filter.Source)
+		}
+
+		if filter.Language != nil {
+			language = strings.ToLower(*filter.Language)
+		}
+	}
 
 	key := countryId + ";;" + aliasType + ";;" + source + ";;" + language
-	alias, ok := g.CountryCacheForAlias[key]
+	alias, ok := g.countryCacheForAlias[key]
 
 	if ok {
 		//fmt.Println("from cache:", alias)
@@ -88,16 +118,22 @@ func (g *Geo) FindCountryAlias(countryId string, aliasType string, source string
 
 	alias = ""
 
-	for _, ca := range g.CountryAliases {
+	for _, ca := range g.countryAliases {
 		if strings.ToLower(ca.CountryId) == strings.ToLower(countryId) {
-			if !strings.Contains(","+strings.ToLower(ca.AliasType)+",", ","+strings.ToLower(aliasType)+",") {
-				continue
+			if aliasType != "" {
+				if !strings.Contains(","+strings.ToLower(ca.AliasType)+",", ","+strings.ToLower(aliasType)+",") {
+					continue
+				}
 			}
-			if !strings.Contains(","+strings.ToLower(ca.Language)+",", ","+strings.ToLower(language)+",") {
-				continue
+			if source != "" {
+				if !strings.Contains(","+strings.ToLower(ca.Source)+",", ","+strings.ToLower(source)+",") {
+					continue
+				}
 			}
-			if !strings.Contains(","+strings.ToLower(ca.Source)+",", ","+strings.ToLower(source)+",") {
-				continue
+			if language != "" {
+				if !strings.Contains(","+strings.ToLower(ca.Language)+",", ","+strings.ToLower(language)+",") {
+					continue
+				}
 			}
 
 			if alias != "" && alias != ca.Alias {
@@ -110,7 +146,7 @@ func (g *Geo) FindCountryAlias(countryId string, aliasType string, source string
 	}
 
 	if alias != "" {
-		g.CountryCacheForAlias[key] = alias
+		g.countryCacheForAlias[key] = alias
 		//fmt.Println("in cache:", alias)
 	}
 
@@ -120,30 +156,44 @@ func (g *Geo) FindCountryAlias(countryId string, aliasType string, source string
 // FindCountryId searches for CountryAlias matching the comma-separated aliastypes, sources and languages
 // and returns the CountryId
 //
-func (g *Geo) FindCountryId(input string, aliasTypes string, sources string, languages string) (string, *errortools.Error) {
-	if input == "" {
+func (g *Geo) CountryAlias2CountryID(alias string, filter *CountryAliasFilter) (string, *errortools.Error) {
+	if alias == "" {
 		return "", nil
 	}
 
 	// get aliases if needed
-	if len(g.CountryAliases) == 0 {
-		e := g.GetCountryAliases()
+	if len(g.countryAliases) == 0 {
+		e := g.getCountryAliases()
 		if e != nil {
 			return "", e
 		}
 	}
 
 	// init cache if needed
-	if g.CountryCacheForID == nil {
-		g.CountryCacheForID = make(map[string]string)
+	if g.countryCacheForID == nil {
+		g.countryCacheForID = make(map[string]string)
 	}
 
-	aliasTypes = strings.ToLower(aliasTypes)
-	sources = strings.ToLower(sources)
-	languages = strings.ToLower(languages)
+	aliasType := ""
+	source := ""
+	language := ""
 
-	key := input + ";;" + aliasTypes + ";;" + sources + ";;" + languages
-	id, ok := g.CountryCacheForID[key]
+	if filter != nil {
+		if filter.AliasType != nil {
+			aliasType = strings.ToLower(*filter.AliasType)
+		}
+
+		if filter.Source != nil {
+			source = strings.ToLower(*filter.Source)
+		}
+
+		if filter.Language != nil {
+			language = strings.ToLower(*filter.Language)
+		}
+	}
+
+	key := alias + ";;" + aliasType + ";;" + source + ";;" + language
+	id, ok := g.countryCacheForID[key]
 
 	if ok {
 		//fmt.Println("from cache:", id)
@@ -152,17 +202,23 @@ func (g *Geo) FindCountryId(input string, aliasTypes string, sources string, lan
 
 	id = ""
 
-	for _, ca := range g.CountryAliases {
-		if aliasTypes != "" && !strings.Contains(","+strings.ToLower(aliasTypes)+",", ","+strings.ToLower(ca.AliasType)+",") {
-			continue
+	for _, ca := range g.countryAliases {
+		if aliasType != "" {
+			if aliasType != "" && !strings.Contains(","+strings.ToLower(aliasType)+",", ","+strings.ToLower(ca.AliasType)+",") {
+				continue
+			}
 		}
-		if languages != "" && !strings.Contains(","+strings.ToLower(languages)+",", ","+strings.ToLower(ca.Language)+",") {
-			continue
+		if source != "" {
+			if source != "" && !strings.Contains(","+strings.ToLower(source)+",", ","+strings.ToLower(ca.Source)+",") {
+				continue
+			}
 		}
-		if sources != "" && !strings.Contains(","+strings.ToLower(sources)+",", ","+strings.ToLower(ca.Source)+",") {
-			continue
+		if language != "" {
+			if language != "" && !strings.Contains(","+strings.ToLower(language)+",", ","+strings.ToLower(ca.Language)+",") {
+				continue
+			}
 		}
-		if strings.ToLower(input) == strings.ToLower(ca.Alias) {
+		if strings.ToLower(alias) == strings.ToLower(ca.Alias) {
 			if id != "" && id != ca.CountryId {
 				// double match
 				//fmt.Println("double!", id, ca.CountryId)
@@ -174,15 +230,36 @@ func (g *Geo) FindCountryId(input string, aliasTypes string, sources string, lan
 	}
 
 	if id != "" {
-		g.CountryCacheForID[key] = id
+		g.countryCacheForID[key] = id
 		//fmt.Println("in cache:", id)
 	}
 
 	return id, nil
 }
 
-// ClearCountryCache clears cache with matched countries
+// FindCountryId searches for CountryAlias matching the comma-separated aliastypes, sources and languages
+// and returns the CountryId
 //
-func (g *Geo) ClearCountryCache() {
-	g.CountryCacheForID = nil
+func (g *Geo) CountryAlias2CountryAlias(aliasFrom string, filterFrom *CountryAliasFilter, filterTo *CountryAliasFilter) (string, *errortools.Error) {
+	countryID, e := g.CountryAlias2CountryID(aliasFrom, filterFrom)
+	if e != nil {
+		return "", e
+	}
+
+	if countryID == "" {
+		return "", nil
+	}
+
+	aliasTo, e := g.CountryID2CountryAlias(countryID, filterTo)
+	if e != nil {
+		return "", e
+	}
+
+	return aliasTo, nil
+}
+
+// clearCountryCache clears cache with matched countries
+//
+func (g *Geo) clearCountryCache() {
+	g.countryCacheForID = nil
 }
