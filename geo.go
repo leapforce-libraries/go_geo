@@ -3,7 +3,7 @@ package geo
 import (
 	"strings"
 
-	bigquerytools "github.com/leapforce-libraries/go_bigquerytools"
+	google "github.com/leapforce-libraries/go_bigquerytools"
 	errortools "github.com/leapforce-libraries/go_errortools"
 
 	"google.golang.org/api/iterator"
@@ -15,7 +15,7 @@ const (
 )
 
 type Geo struct {
-	bigQuery             *bigquerytools.BigQuery
+	bigQuery             *google.BigQuery
 	countryAliases       []CountryAlias
 	countryCacheForID    map[string]string
 	countryCacheForAlias map[string]string
@@ -29,7 +29,7 @@ type CountryAlias struct {
 	Language  string
 }
 
-func NewGeo(bq *bigquerytools.BigQuery) (*Geo, *errortools.Error) {
+func NewGeo(bq *google.BigQuery) (*Geo, *errortools.Error) {
 	if bq == nil {
 		return nil, errortools.ErrorMessage("BigQuery object passed to NewGeo may not be a nil pointer.")
 	}
