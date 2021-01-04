@@ -3,8 +3,8 @@ package geo
 import (
 	"strings"
 
-	google "github.com/leapforce-libraries/go_bigquerytools"
 	errortools "github.com/leapforce-libraries/go_errortools"
+	google "github.com/leapforce-libraries/go_google"
 
 	"google.golang.org/api/iterator"
 )
