@@ -31,7 +31,7 @@ type CountryAlias struct {
 
 func NewService(bq *google.BigQuery) (*Service, *errortools.Error) {
 	if bq == nil {
-		return nil, errortools.ErrorMessage("BigQuery object passed to NewGeo may not be a nil pointer.")
+		return nil, errortools.ErrorMessage("BigQuery object passed to NewService may not be a nil pointer.")
 	}
 
 	return &Service{
