@@ -4,18 +4,18 @@ import (
 	"strings"
 
 	errortools "github.com/leapforce-libraries/go_errortools"
-	google "github.com/leapforce-libraries/go_google"
+	bigquery "github.com/leapforce-libraries/go_google/bigquery"
 
 	"google.golang.org/api/iterator"
 )
 
 const (
-	bigqueryDataSetGeo         string = "geo"
-	bigqueryTablenameCountries string = "countries"
+	bigQueryDataSetGeo         string = "geo"
+	bigQueryTablenameCountries string = "countries"
 )
 
 type Service struct {
-	bigQuery             *google.BigQuery
+	bigQueryService      *bigquery.Service
 	countryAliases       []CountryAlias
 	countryCacheForID    map[string]string
 	countryCacheForAlias map[string]string
@@ -29,13 +29,13 @@ type CountryAlias struct {
 	Language  string
 }
 
-func NewService(bq *google.BigQuery) (*Service, *errortools.Error) {
-	if bq == nil {
+func NewService(bigQueryService *bigquery.Service) (*Service, *errortools.Error) {
+	if bigQueryService == nil {
 		return nil, errortools.ErrorMessage("BigQuery object passed to NewService may not be a nil pointer.")
 	}
 
 	return &Service{
-		bigQuery: bq,
+		bigQueryService: bigQueryService,
 	}, nil
 }
 
@@ -43,7 +43,7 @@ func (service *Service) getCountryAliases() *errortools.Error {
 	sqlSelect := "CountryId, Alias, AliasType, IFNULL(Source,'') AS Source, IFNULL(Language,'') AS Language"
 	sqlWhere := "CountryId IS NOT NULL AND Alias IS NOT NULL AND AliasType IS NOT NULL"
 
-	it, e := service.bigQuery.Select(bigqueryDataSetGeo, bigqueryTablenameCountries, sqlSelect, sqlWhere, "")
+	it, e := service.bigQueryService.Select(bigQueryDataSetGeo, bigQueryTablenameCountries, sqlSelect, sqlWhere, "")
 	if e != nil {
 		return e
 	}
