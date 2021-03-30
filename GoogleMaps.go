@@ -41,14 +41,17 @@ func (service *Service) GetGoogleMapsGeoCode(geoCodingService *googlemaps.GeoCod
 		// lookup address in BQ table
 		_geoCode := GeoCode{}
 
-		selectConfig := bigquery.SelectConfig{
+		tableName := bigQueryTablenameGoogleGeoCodes
+		sqlSelect := "Address, GeoCodes"
+		sqlWhere := fmt.Sprintf("Address = \"%s\"", address)
+		sqlConfig := bigquery.SQLConfig{
 			DatasetName:     bigQueryDataSetGeo,
-			TableOrViewName: bigQueryTablenameGoogleGeoCodes,
-			SQLSelect:       "Address, GeoCodes",
-			SQLWhere:        fmt.Sprintf("Address = \"%s\"", address),
+			TableOrViewName: &tableName,
+			SQLSelect:       &sqlSelect,
+			SQLWhere:        &sqlWhere,
 		}
 
-		rowCount, e := service.bigQueryService.GetStruct(&selectConfig, &_geoCode)
+		rowCount, e := service.bigQueryService.GetStruct(&sqlConfig, &_geoCode)
 		if e != nil {
 			errortools.CaptureError(e)
 		} else if rowCount > 0 {
@@ -132,7 +135,22 @@ func (service *Service) SaveNewGoogleMapsGeoCodes() *errortools.Error {
 		return errortools.ErrorMessage(err)
 	}
 
-	e := service.bigQueryService.CopyObjectToTable(obj, bigQueryDataSetGeo, bigQueryTablenameGoogleGeoCodes, GeoCode{}, ctx, false, true)
+	// copy data to BigQuery temp table
+	tableName := bigQueryTablenameGoogleGeoCodes
+	sqlConfig := bigquery.SQLConfig{
+		DatasetName:     bigQueryDataSetGeo,
+		TableOrViewName: &tableName,
+		ModelOrSchema:   GeoCode{},
+	}.GenerateTempTable()
+
+	copyObjectToTableConfig := bigquery.CopyObjectToTableConfig{
+		ObjectHandle:  obj,
+		SQLConfig:     &sqlConfig,
+		TruncateTable: false,
+		DeleteObject:  true,
+	}
+
+	e := service.bigQueryService.CopyObjectToTable(&copyObjectToTableConfig)
 	if e != nil {
 		return e
 	}

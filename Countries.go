@@ -18,14 +18,17 @@ type CountryAlias struct {
 }
 
 func (service *Service) getCountryAliases() *errortools.Error {
-	selectConfig := bigquery.SelectConfig{
+	tableName := bigQueryTablenameCountries
+	sqlSelect := "CountryId, Alias, AliasType, IFNULL(Source,'') AS Source, IFNULL(Language,'') AS Language"
+	sqlWhere := "CountryId IS NOT NULL AND Alias IS NOT NULL AND AliasType IS NOT NULL"
+	sqlConfig := bigquery.SQLConfig{
 		DatasetName:     bigQueryDataSetGeo,
-		TableOrViewName: bigQueryTablenameCountries,
-		SQLSelect:       "CountryId, Alias, AliasType, IFNULL(Source,'') AS Source, IFNULL(Language,'') AS Language",
-		SQLWhere:        "CountryId IS NOT NULL AND Alias IS NOT NULL AND AliasType IS NOT NULL",
+		TableOrViewName: &tableName,
+		SQLSelect:       &sqlSelect,
+		SQLWhere:        &sqlWhere,
 	}
 
-	it, e := service.bigQueryService.Select(&selectConfig)
+	it, e := service.bigQueryService.Select(&sqlConfig)
 	if e != nil {
 		return e
 	}
