@@ -141,7 +141,7 @@ func (service *Service) SaveNewGoogleMapsGeoCodes() *errortools.Error {
 		DatasetName:     bigQueryDataSetGeo,
 		TableOrViewName: &tableName,
 		ModelOrSchema:   GeoCode{},
-	}.GenerateTempTable()
+	}
 
 	copyObjectToTableConfig := bigquery.CopyObjectToTableConfig{
 		ObjectHandle:  obj,
