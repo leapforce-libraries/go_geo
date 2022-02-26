@@ -21,14 +21,14 @@ func (service *Service) getCountryAliases() *errortools.Error {
 	tableName := bigQueryTablenameCountries
 	sqlSelect := "CountryId, Alias, AliasType, IFNULL(Source,'') AS Source, IFNULL(Language,'') AS Language"
 	sqlWhere := "CountryId IS NOT NULL AND Alias IS NOT NULL AND AliasType IS NOT NULL"
-	sqlConfig := bigquery.SQLConfig{
+	sqlConfig := bigquery.SqlConfig{
 		DatasetName:     bigQueryDataSetGeo,
 		TableOrViewName: &tableName,
-		SQLSelect:       &sqlSelect,
-		SQLWhere:        &sqlWhere,
+		SqlSelect:       &sqlSelect,
+		SqlWhere:        &sqlWhere,
 	}
 
-	it, e := service.bigQueryService.Select(&sqlConfig)
+	it, e := service.bigQueryService.SelectRows(&sqlConfig)
 	if e != nil {
 		return e
 	}
@@ -104,7 +104,7 @@ func (service *Service) CountryID2CountryAlias(countryId string, filter *Country
 	alias = ""
 
 	for _, ca := range service.countryAliases {
-		if strings.ToLower(ca.CountryId) == strings.ToLower(countryId) {
+		if strings.EqualFold(ca.CountryId, countryId) {
 			if aliasType != "" {
 				if !strings.Contains(","+strings.ToLower(ca.AliasType)+",", ","+strings.ToLower(aliasType)+",") {
 					continue
@@ -203,7 +203,7 @@ func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAlia
 				continue
 			}
 		}
-		if strings.ToLower(alias) == strings.ToLower(ca.Alias) {
+		if strings.EqualFold(alias, ca.Alias) {
 			if id != "" && id != ca.CountryId {
 				// double match
 				//fmt.Println("double!", id, ca.CountryId)
@@ -241,10 +241,4 @@ func (service *Service) CountryAlias2CountryAlias(aliasFrom string, filterFrom *
 	}
 
 	return aliasTo, nil
-}
-
-// clearCountryCache clears cache with matched countries
-//
-func (service *Service) clearCountryCache() {
-	service.countryCacheForID = nil
 }

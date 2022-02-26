@@ -44,11 +44,11 @@ func (service *Service) GetGoogleMapsGeoCode(geoCodingService *googlemaps.GeoCod
 		tableName := bigQueryTablenameGoogleGeoCodes
 		sqlSelect := "Address, GeoCodes"
 		sqlWhere := fmt.Sprintf("Address = \"%s\"", address)
-		sqlConfig := bigquery.SQLConfig{
+		sqlConfig := bigquery.SqlConfig{
 			DatasetName:     bigQueryDataSetGeo,
 			TableOrViewName: &tableName,
-			SQLSelect:       &sqlSelect,
-			SQLWhere:        &sqlWhere,
+			SqlSelect:       &sqlSelect,
+			SqlWhere:        &sqlWhere,
 		}
 
 		rowCount, e := service.bigQueryService.GetStruct(&sqlConfig, &_geoCode)
@@ -137,7 +137,7 @@ func (service *Service) SaveNewGoogleMapsGeoCodes() *errortools.Error {
 
 	// copy data to BigQuery temp table
 	tableName := bigQueryTablenameGoogleGeoCodes
-	sqlConfig := bigquery.SQLConfig{
+	sqlConfig := bigquery.SqlConfig{
 		DatasetName:     bigQueryDataSetGeo,
 		TableOrViewName: &tableName,
 		ModelOrSchema:   GeoCode{},
@@ -145,7 +145,7 @@ func (service *Service) SaveNewGoogleMapsGeoCodes() *errortools.Error {
 
 	copyObjectToTableConfig := bigquery.CopyObjectToTableConfig{
 		ObjectHandle:  obj,
-		SQLConfig:     &sqlConfig,
+		SqlConfig:     &sqlConfig,
 		TruncateTable: false,
 		DeleteObject:  true,
 	}
