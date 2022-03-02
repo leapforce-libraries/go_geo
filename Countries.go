@@ -142,6 +142,8 @@ func (service *Service) CountryID2CountryAlias(countryId string, filter *Country
 // and returns the CountryId
 //
 func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAliasFilter) (string, *errortools.Error) {
+	alias = strings.Trim(alias, " ")
+
 	if alias == "" {
 		return "", nil
 	}
