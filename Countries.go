@@ -1,12 +1,12 @@
 package geo
 
 import (
+	"sort"
 	"strings"
 
 	errortools "github.com/leapforce-libraries/go_errortools"
 	bigquery "github.com/leapforce-libraries/go_google/bigquery"
-
-	"google.golang.org/api/iterator"
+	go_fuzzy "github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 type CountryAlias struct {
@@ -28,25 +28,7 @@ func (service *Service) getCountryAliases() *errortools.Error {
 		SqlWhere:        &sqlWhere,
 	}
 
-	it, e := service.bigQueryService.SelectRows(&sqlConfig)
-	if e != nil {
-		return e
-	}
-
-	for {
-		var ca CountryAlias
-		err := it.Next(&ca)
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return errortools.ErrorMessage(e)
-		}
-
-		service.countryAliases = append(service.countryAliases, ca)
-	}
-
-	return nil
+	return service.bigQueryService.Select(&sqlConfig, &service.countryAliases)
 }
 
 type CountryAliasFilter struct {
@@ -97,7 +79,6 @@ func (service *Service) CountryID2CountryAlias(countryId string, filter *Country
 	alias, ok := service.countryCacheForAlias[key]
 
 	if ok {
-		//fmt.Println("from cache:", alias)
 		return alias, nil
 	}
 
@@ -132,7 +113,6 @@ func (service *Service) CountryID2CountryAlias(countryId string, filter *Country
 
 	if alias != "" {
 		service.countryCacheForAlias[key] = alias
-		//fmt.Println("in cache:", alias)
 	}
 
 	return alias, nil
@@ -141,7 +121,7 @@ func (service *Service) CountryID2CountryAlias(countryId string, filter *Country
 // FindCountryId searches for CountryAlias matching the comma-separated aliastypes, sources and languages
 // and returns the CountryId
 //
-func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAliasFilter) (string, *errortools.Error) {
+func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAliasFilter, fuzzy bool) (string, *errortools.Error) {
 	alias = strings.Trim(alias, " ")
 
 	if alias == "" {
@@ -159,6 +139,9 @@ func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAlia
 	// init cache if needed
 	if service.countryCacheForID == nil {
 		service.countryCacheForID = make(map[string]string)
+	}
+	if fuzzy && service.countryCacheForIDFuzzy == nil {
+		service.countryCacheForIDFuzzy = make(map[string]string)
 	}
 
 	aliasType := ""
@@ -179,11 +162,85 @@ func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAlia
 		}
 	}
 
+	id, e := service.matchCountry(alias, aliasType, source, language)
+	if e != nil {
+		return "", e
+	}
+
+	if id != "" {
+		return id, nil
+	}
+
+	if fuzzy {
+		return service.matchCountryFuzzy(alias, aliasType, source, language)
+	}
+
+	return id, nil
+}
+
+func (service *Service) matchCountryFuzzy(alias string, aliasType string, source string, language string) (string, *errortools.Error) {
+	key := alias + ";;" + aliasType + ";;" + source + ";;" + language
+	id, ok := service.countryCacheForIDFuzzy[key]
+
+	if ok {
+		return id, nil
+	}
+
+	id = ""
+
+	aliases := []string{}
+
+	for _, ca := range service.countryAliases {
+		if aliasType != "" {
+			if aliasType != "" && !strings.Contains(","+strings.ToLower(aliasType)+",", ","+strings.ToLower(ca.AliasType)+",") {
+				continue
+			}
+		}
+		if source != "" {
+			if source != "" && !strings.Contains(","+strings.ToLower(source)+",", ","+strings.ToLower(ca.Source)+",") {
+				continue
+			}
+		}
+		if language != "" {
+			if language != "" && !strings.Contains(","+strings.ToLower(language)+",", ","+strings.ToLower(ca.Language)+",") {
+				continue
+			}
+		}
+
+		aliases = append(aliases, ca.Alias)
+	}
+
+	if len(aliases) == 0 {
+		return "", nil
+	}
+
+	matches := go_fuzzy.RankFindNormalizedFold(alias, aliases)
+
+	if matches.Len() == 0 {
+		return "", nil
+	}
+
+	sort.Sort(matches)
+	alias = matches[0].Target
+
+	// do non fuzzy matching to retrieve id (not optimal, but...)
+	id, e := service.matchCountry(alias, aliasType, source, language)
+	if e != nil {
+		return "", e
+	}
+
+	if id != "" {
+		service.countryCacheForIDFuzzy[key] = id
+	}
+
+	return id, nil
+}
+
+func (service *Service) matchCountry(alias string, aliasType string, source string, language string) (string, *errortools.Error) {
 	key := alias + ";;" + aliasType + ";;" + source + ";;" + language
 	id, ok := service.countryCacheForID[key]
 
 	if ok {
-		//fmt.Println("from cache:", id)
 		return id, nil
 	}
 
@@ -208,7 +265,6 @@ func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAlia
 		if strings.EqualFold(alias, ca.Alias) {
 			if id != "" && id != ca.CountryId {
 				// double match
-				//fmt.Println("double!", id, ca.CountryId)
 				id = ""
 				break
 			}
@@ -218,7 +274,6 @@ func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAlia
 
 	if id != "" {
 		service.countryCacheForID[key] = id
-		//fmt.Println("in cache:", id)
 	}
 
 	return id, nil
@@ -227,8 +282,8 @@ func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAlia
 // FindCountryId searches for CountryAlias matching the comma-separated aliastypes, sources and languages
 // and returns the CountryId
 //
-func (service *Service) CountryAlias2CountryAlias(aliasFrom string, filterFrom *CountryAliasFilter, filterTo *CountryAliasFilter) (string, *errortools.Error) {
-	countryID, e := service.CountryAlias2CountryID(aliasFrom, filterFrom)
+func (service *Service) CountryAlias2CountryAlias(aliasFrom string, filterFrom *CountryAliasFilter, filterTo *CountryAliasFilter, fuzzy bool) (string, *errortools.Error) {
+	countryID, e := service.CountryAlias2CountryID(aliasFrom, filterFrom, fuzzy)
 	if e != nil {
 		return "", e
 	}

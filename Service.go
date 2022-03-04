@@ -14,11 +14,12 @@ const (
 )
 
 type Service struct {
-	bigQueryService      *bigquery.Service
-	storageClient        *storage.Client
-	countryAliases       []CountryAlias
-	countryCacheForID    map[string]string
-	countryCacheForAlias map[string]string
+	bigQueryService        *bigquery.Service
+	storageClient          *storage.Client
+	countryAliases         []CountryAlias
+	countryCacheForID      map[string]string
+	countryCacheForIDFuzzy map[string]string
+	countryCacheForAlias   map[string]string
 }
 
 func NewService(bigQueryService *bigquery.Service, storageClient *storage.Client) (*Service, *errortools.Error) {
