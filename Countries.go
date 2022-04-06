@@ -121,7 +121,7 @@ func (service *Service) CountryID2CountryAlias(countryId string, filter *Country
 // FindCountryId searches for CountryAlias matching the comma-separated aliastypes, sources and languages
 // and returns the CountryId
 //
-func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAliasFilter, fuzzy bool) (string, *errortools.Error) {
+func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAliasFilter, maxDistance uint) (string, *errortools.Error) {
 	alias = strings.Trim(alias, " ")
 
 	if alias == "" {
@@ -140,7 +140,7 @@ func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAlia
 	if service.countryCacheForID == nil {
 		service.countryCacheForID = make(map[string]string)
 	}
-	if fuzzy && service.countryCacheForIDFuzzy == nil {
+	if maxDistance > 0 && service.countryCacheForIDFuzzy == nil {
 		service.countryCacheForIDFuzzy = make(map[string]string)
 	}
 
@@ -171,14 +171,14 @@ func (service *Service) CountryAlias2CountryID(alias string, filter *CountryAlia
 		return id, nil
 	}
 
-	if fuzzy {
-		return service.matchCountryFuzzy(alias, aliasType, source, language)
+	if maxDistance > 0 {
+		return service.matchCountryFuzzy(alias, aliasType, source, language, maxDistance)
 	}
 
 	return id, nil
 }
 
-func (service *Service) matchCountryFuzzy(alias string, aliasType string, source string, language string) (string, *errortools.Error) {
+func (service *Service) matchCountryFuzzy(alias string, aliasType string, source string, language string, maxDistance uint) (string, *errortools.Error) {
 	key := alias + ";;" + aliasType + ";;" + source + ";;" + language
 	id, ok := service.countryCacheForIDFuzzy[key]
 
@@ -221,6 +221,9 @@ func (service *Service) matchCountryFuzzy(alias string, aliasType string, source
 	}
 
 	sort.Sort(matches)
+	if matches[0].Distance > int(maxDistance) {
+		return "", nil
+	}
 	alias = matches[0].Target
 
 	// do non fuzzy matching to retrieve id (not optimal, but...)
@@ -282,8 +285,8 @@ func (service *Service) matchCountry(alias string, aliasType string, source stri
 // FindCountryId searches for CountryAlias matching the comma-separated aliastypes, sources and languages
 // and returns the CountryId
 //
-func (service *Service) CountryAlias2CountryAlias(aliasFrom string, filterFrom *CountryAliasFilter, filterTo *CountryAliasFilter, fuzzy bool) (string, *errortools.Error) {
-	countryID, e := service.CountryAlias2CountryID(aliasFrom, filterFrom, fuzzy)
+func (service *Service) CountryAlias2CountryAlias(aliasFrom string, filterFrom *CountryAliasFilter, filterTo *CountryAliasFilter, maxDistance uint) (string, *errortools.Error) {
+	countryID, e := service.CountryAlias2CountryID(aliasFrom, filterFrom, maxDistance)
 	if e != nil {
 		return "", e
 	}
